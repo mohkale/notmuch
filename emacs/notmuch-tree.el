@@ -363,6 +363,7 @@ then NAME behaves like CMD."
     (define-key map [remap notmuch-jump-search]   'notmuch-tree-jump-search)
 
     (define-key map "o" 'notmuch-tree-toggle-order)
+    (define-key map "i" 'notmuch-tree-toggle-exclude)
     (define-key map "S" 'notmuch-search-from-tree-current-query)
     (define-key map "U" 'notmuch-unthreaded-from-tree-current-query)
     (define-key map "Z" 'notmuch-tree-from-unthreaded-current-query)
@@ -578,7 +579,9 @@ NOT change the database."
   "Call notmuch search with the current query."
   (interactive)
   (notmuch-tree-close-message-window)
-  (notmuch-search (notmuch-tree-get-query)))
+  (notmuch-search (notmuch-tree-get-query)
+		  notmuch-search-oldest-first
+		  notmuch-search-exclude))
 
 (defun notmuch-tree-message-window-kill-hook ()
   "Close the message pane when exiting the show buffer."
@@ -791,7 +794,8 @@ nil otherwise."
 			 target
 			 nil
 			 unthreaded
-			 notmuch-search-oldest-first)))
+			 notmuch-search-oldest-first
+			 notmuch-search-exclude)))
 
 (defun notmuch-tree-thread-top ()
   (when (notmuch-tree-get-message-properties)
@@ -1108,7 +1112,8 @@ Complete list of currently available key bindings:
 					 results-buf)))))
 
 (defun notmuch-tree-worker (basic-query &optional query-context target
-					open-target unthreaded oldest-first)
+					open-target unthreaded oldest-first
+					exclude)
   "Insert the tree view of the search in the current buffer.
 
 This is is a helper function for notmuch-tree. The arguments are
@@ -1117,6 +1122,7 @@ the same as for the function notmuch-tree."
   (notmuch-tree-mode)
   (add-hook 'post-command-hook #'notmuch-tree-command-hook t t)
   (setq notmuch-search-oldest-first oldest-first)
+  (setq notmuch-search-exclude exclude)
   (setq notmuch-tree-unthreaded unthreaded)
   (setq notmuch-tree-basic-query basic-query)
   (setq notmuch-tree-query-context (if (or (string= query-context "")
@@ -1136,14 +1142,15 @@ the same as for the function notmuch-tree."
 			      (and query-context
 				   (concat " and (" query-context ")"))))
 	 (sort-arg (if oldest-first "--sort=oldest-first" "--sort=newest-first"))
-	 (message-arg (if unthreaded "--unthreaded" "--entire-thread")))
+	 (message-arg (if unthreaded "--unthreaded" "--entire-thread"))
+	 (exclude-arg (if exclude "--exclude=true" "--exclude=false")))
     (when (equal (car (notmuch--process-lines notmuch-command "count" search-args)) "0")
       (setq search-args basic-query))
     (notmuch-tag-clear-cache)
     (let ((proc (notmuch-start-notmuch
 		 "notmuch-tree" (current-buffer) #'notmuch-tree-process-sentinel
 		 "show" "--body=false" "--format=sexp" "--format-version=5"
-		 sort-arg message-arg search-args))
+		 sort-arg message-arg exclude-arg search-args))
 	  ;; Use a scratch buffer to accumulate partial output.
 	  ;; This buffer will be killed by the sentinel, which
 	  ;; should be called no matter how the process dies.
@@ -1170,8 +1177,18 @@ default sort order is defined by `notmuch-search-oldest-first'."
   (setq notmuch-search-oldest-first (not notmuch-search-oldest-first))
   (notmuch-tree-refresh-view))
 
+(defun notmuch-tree-toggle-exclude ()
+  "Toggle whether to hide excluded messages.
+
+This command toggles whether to hide excluded messages for the current
+search. The default value for this is defined by `notmuch-search-exclude'."
+  (interactive)
+  (setq notmuch-search-exclude (not notmuch-search-exclude))
+  (notmuch-tree-refresh-view))
+
 (defun notmuch-tree (&optional query query-context target buffer-name
-			       open-target unthreaded parent-buffer oldest-first)
+			       open-target unthreaded parent-buffer
+			       oldest-first exclude)
   "Display threads matching QUERY in tree view.
 
 The arguments are:
@@ -1200,17 +1217,19 @@ The arguments are:
     (pop-to-buffer-same-window buffer))
   ;; Don't track undo information for this buffer
   (setq buffer-undo-list t)
-  (notmuch-tree-worker query query-context target open-target unthreaded oldest-first)
+  (notmuch-tree-worker query query-context target open-target
+		       unthreaded oldest-first exclude)
   (setq notmuch-tree-parent-buffer parent-buffer)
   (setq truncate-lines t))
 
 (defun notmuch-unthreaded (&optional query query-context target buffer-name
-				     open-target)
+				     open-target oldest-first exclude)
   "Display threads matching QUERY in unthreaded view.
 
 See function NOTMUCH-TREE for documentation of the arguments"
   (interactive)
-  (notmuch-tree query query-context target buffer-name open-target t))
+  (notmuch-tree query query-context target buffer-name open-target
+		t nil oldest-first exclude))
 
 (defun notmuch-tree-filter (query)
   "Filter or LIMIT the current search results based on an additional query string.
@@ -1244,7 +1263,8 @@ search results and that are also tagged with the given TAG."
 		  nil
 		  notmuch-tree-unthreaded
 		  nil
-		  notmuch-search-oldest-first)))
+		  notmuch-search-oldest-first
+		  notmuch-search-exclude)))
 
 ;;; _
 

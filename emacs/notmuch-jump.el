@@ -50,15 +50,18 @@ fast way to jump to a saved search from anywhere in Notmuch."
 		 (cl-case (plist-get saved-search :sort-order)
 		   (newest-first nil)
 		   (oldest-first t)
-		   (otherwise (default-value 'notmuch-search-oldest-first)))))
+		   (otherwise (default-value 'notmuch-search-oldest-first))))
+		(exclude (default-value 'notmuch-search-exclude)))
 	    (push (list key name
 			(cond
 			 ((eq (plist-get saved-search :search-type) 'tree)
-			  (lambda () (notmuch-tree query)))
+			  (lambda () (notmuch-tree query nil nil nil nil nil nil
+					      oldest-first exclude)))
 			 ((eq (plist-get saved-search :search-type) 'unthreaded)
-			  (lambda () (notmuch-unthreaded query)))
+			  (lambda () (notmuch-unthreaded query nil nil nil nil
+						    oldest-first exclude)))
 			 (t
-			  (lambda () (notmuch-search query oldest-first)))))
+			  (lambda () (notmuch-search query oldest-first exclude)))))
 		  action-map)))))
     (setq action-map (nreverse action-map))
     (if action-map
