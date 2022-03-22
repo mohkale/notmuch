@@ -201,6 +201,9 @@ menu of results that the user can explore further by pressing
 ``g`` ``=``
     Refresh the buffer
 
+``i``
+    Toggle whether to show messages with excluded tags in search results.
+
 ``?``
     Display full set of key bindings
 
@@ -384,6 +387,8 @@ tags.
 ``t`` ``notmuch-tree-filter-by-tag``
    Filter the current search results based on an additional tag
 
+``i``
+    Toggle whether to show messages with excluded tags in search results.
 
 ``g`` ``=``
     Refresh the buffer
