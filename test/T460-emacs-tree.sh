@@ -8,6 +8,12 @@ EXPECTED=$NOTMUCH_SRCDIR/test/emacs-tree.expected-output
 
 test_require_emacs
 add_email_corpus
+tag=exclude_me
+add_message '[subject]="excluded message 1"' '[date]="Sat, 01 Jan 2000 12:00:00 -0000"'
+notmuch tag +$tag id:${gen_msg_id}
+add_message '[subject]="excluded message 2"' '[date]="Sat, 01 Jan 2000 12:00:00 -0000"'
+notmuch tag +$tag id:${gen_msg_id}
+notmuch config set search.exclude_tags $tag
 
 test_begin_subtest "Basic notmuch-tree view in emacs"
 test_emacs '(notmuch-tree "tag:inbox")
@@ -24,6 +30,24 @@ test_emacs '(notmuch-tree "tag:inbox")
 	    (test-output)
 	    (delete-other-windows)'
 test_expect_equal_file $EXPECTED/notmuch-tree-tag-inbox OUTPUT
+
+test_begin_subtest "Refreshed notmuch-tree view in emacs (with oldest-first)"
+test_emacs '(notmuch-tree "tag:inbox" nil nil nil nil nil nil t)
+	    (notmuch-test-wait)
+	    (notmuch-tree-refresh-view)
+	    (notmuch-test-wait)
+	    (test-output)
+	    (delete-other-windows)'
+test_expect_equal_file $EXPECTED/notmuch-tree-tag-inbox-oldest-first OUTPUT
+
+test_begin_subtest "Refreshed notmuch-tree view in emacs (no-exclude)"
+test_emacs '(notmuch-tree "tag:inbox" nil nil nil nil nil nil nil t)
+	    (notmuch-test-wait)
+	    (notmuch-tree-refresh-view)
+	    (notmuch-test-wait)
+	    (test-output)
+	    (delete-other-windows)'
+test_expect_equal_file $EXPECTED/notmuch-tree-tag-inbox-no-exclude OUTPUT
 
 # In the following tag tests we make sure the display is updated
 # correctly and, in a separate test, that the database is updated

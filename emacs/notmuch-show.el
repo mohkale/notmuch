@@ -1589,14 +1589,20 @@ All currently available key bindings:
   (interactive)
   (notmuch-tree notmuch-show-thread-id
 		notmuch-show-query-context
-		(notmuch-show-get-message-id)))
+		(notmuch-show-get-message-id)
+		nil nil nil nil
+		notmuch-search-oldest-first
+		notmuch-search-exclude))
 
 (defun notmuch-unthreaded-from-show-current-query ()
   "Call notmuch unthreaded with the current query."
   (interactive)
   (notmuch-unthreaded notmuch-show-thread-id
 		      notmuch-show-query-context
-		      (notmuch-show-get-message-id)))
+		      (notmuch-show-get-message-id)
+		      nil nil
+		      notmuch-search-oldest-first
+		      notmuch-search-exclude))
 
 ;;; Movement related functions.
 

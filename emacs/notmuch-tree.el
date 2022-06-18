@@ -1203,7 +1203,16 @@ The arguments are:
       it is nil \"*notmuch-tree\" followed by QUERY is used.
   OPEN-TARGET: If TRUE open the target message in the message pane.
   UNTHREADED: If TRUE only show matching messages in an unthreaded view."
-  (interactive)
+  (interactive
+   (list
+    ;; Prompt for a query
+    nil
+    ;; No value for remaining intermediate arguments
+    nil nil nil nil nil nil
+    ;; Use the default search order and exclude value (if we're doing a
+    ;; search from a search buffer, ignore any buffer-local overrides)
+    (default-value 'notmuch-search-oldest-first)
+    (default-value 'notmuch-search-exclude)))
   (unless query
     (setq query (notmuch-read-query (concat "Notmuch "
 					    (if unthreaded "unthreaded " "tree ")
